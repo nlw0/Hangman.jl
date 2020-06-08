@@ -1,0 +1,4 @@
+name = "Hangman"
+uuid = "6f72855b-8fbd-4887-8e84-a8733cebe715"
+authors = ["Nicolau Leal Werneck <nwerneck@gmail.com>"]
+version = "0.1.0"
