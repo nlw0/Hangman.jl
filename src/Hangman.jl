@@ -1,13 +1,17 @@
 module Hangman
 
+
 abstract type State end
+
 abstract type Transition end
+
 abstract type Input end
+
 abstract type Output end
 
-struct MealyStep{R <: Union{Nothing, Output}}
+struct MealyStep{R <: Output, S <: State}
     output::R
-    state
+    state::S
 end
 
 struct NeedInput <: State
@@ -16,102 +20,106 @@ struct NeedInput <: State
     lives :: Int
 end
 
+newgame(word::String) = NeedInput(word, join('_' for _ in 1:length(word)), 9)
+
 struct EndGame <: State
+    laststate :: State
     scored :: Bool
 end
-
-newgame(word::String) = NeedInput(word, join('_' for _ in 1:length(word)), 9)
 
 struct NewGame <: Input
     word::String
 end
 
-struct MyChar <: Input
-    c::Char
+struct NoGame <: Input
 end
 
-struct Print <: Output
-    msg
+struct CharGuess <: Input
+    c::String
 end
 
-function trans(mystate::NeedInput, letter::MyChar)
+struct MsgEmpty <: Output end
+struct MsgGotIt <: Output end
+struct MsgWrong <: Output end
+struct MsgRight <: Output end
+struct MsgNewGame <: Output end
+struct MsgGameOverWon <: Output end
+struct MsgGameOverLost <: Output end
 
+function trans(mystate::NeedInput, letter::CharGuess)
 
-    if letter.c in mystate.guess
+    if length(letter.c) != 1
         MealyStep(
-            Print("already got it!"),
+            MsgEmpty(),
             mystate
         )
-    elseif !(letter.c in mystate.solution)
-        if mystate.lives>0
-            MealyStep(
-                Print("you're wrong, sir."),
-                NeedInput(mystate.solution, mystate.guess, mystate.lives-1)
-            )
-        else
-            MealyStep(
-                Print("you're wrong, sir, and you're DEAD."),
-                EndGame(false)
-            )
-        end
     else
-
-        newguess = join(if a==b || a==letter.c a else '_' end for (a,b) in zip(mystate.solution, mystate.guess))
-
-        if '_' in newguess
+        c = letter.c[1]
+        if c in mystate.guess
             MealyStep(
-                Print("guessed right!"),
-                NeedInput(mystate.solution, newguess, mystate.lives)
+                MsgGotIt(),
+                mystate
             )
+        elseif !(c in mystate.solution)
+            if mystate.lives>1
+                MealyStep(
+                    MsgWrong(),
+                    NeedInput(mystate.solution, mystate.guess, mystate.lives-1)
+                )
+            else
+                MealyStep(
+                    MsgGameOverLost(),
+                    EndGame(NeedInput(mystate.solution, mystate.guess, mystate.lives-1), false)
+                )
+            end
         else
-            MealyStep(
-                Print("you won!"),
-                EndGame(true)
-            )
+            newguess = join(if a==b || a==c a else '_' end for (a,b) in zip(mystate.solution, mystate.guess))
+
+            if '_' in newguess
+                MealyStep(
+                    MsgRight(),
+                    NeedInput(mystate.solution, newguess, mystate.lives)
+                )
+            else
+                MealyStep(
+                    MsgGameOverWon(),
+                    EndGame(NeedInput(mystate.solution, newguess, mystate.lives), true)
+                )
+            end
         end
     end
 end
 
-# trans(step ::S, inp ::I) where {S<:MealyStep{R<:Union{Nothing,Output}}, I<:Input}= trans(step.state, inp)
+"""If a MealyStep is used instead of the state, fetch the state from within it."""
+trans(step ::S, inp ::I) where {R <: Output, S<:MealyStep{R}, I<:Input} = trans(step.state, inp)
 
-trans(step ::S, inp ::I) where {R <: Union{Nothing,Output}, S<:MealyStep{R}, I<:Input} = trans(step.state, inp)
 
+function trans(_, ng::NewGame)
+    MealyStep(MsgNewGame(), newgame(ng.word))
+end
+
+function trans(mystate::EndGame, ng::NewGame)
+    MealyStep(MsgNewGame(), newgame(ng.word))
+end
 
 function trans(mystate::EndGame, _)
     out = if mystate.scored
-        Print("GAME OVER - you won")
+        MsgGameOverWon()
     else
-        Print("GAME OVER - you lost")
+        MsgGameOverLost()
     end
 
     MealyStep(out, mystate)
 end
 
+
 function scanleft(op, col; init)
-    out = Any[init]
+    out = Any[init]  # Type should be the same as the left input and output of `op`
     for el in col
         push!(out, op(out[end], el))
     end
     out
 end
 
-# function mealyscanleft(op, col; init)
-#     out = MealyStep[MealyStep(nothing, init)]
-#     for el in col
-#         push!(out, op(out[end].state, el))
-#     end
-#     out
-# end
-
-
-# function processoutput(o::Print)
-#     @info o.msg
-# end
-
-# function processmealymachine(st::S, l::I)::T where {S<:State, T<:State, I<:Input}
-#     output, newstate = trans(st,l)
-#     processoutput(output)
-#     newstate
-# end
 
 end # module
