@@ -1,5 +1,5 @@
 # Hangman.jl
-Hangman game with Mealy machine
+Hangman game with a Mealy machine
 
 <img src="hangman.png">
 
