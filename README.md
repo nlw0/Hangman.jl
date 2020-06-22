@@ -1,5 +1,5 @@
 # Hangman.jl
-Hangman game with a Mealy machine
+Hangman game with a Mealy machine in Julia.
 
 <img src="hangman.png">
 
