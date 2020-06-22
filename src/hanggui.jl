@@ -73,12 +73,12 @@ end
 
 @printbt function handle_output(msg::MsgGameOverWon)
     GAccessor.text(app["status"], "$(state.laststate.guess) - $(state.laststate.lives) lives left")
-    GAccessor.text(app["messages"], "You won!!")
+    GAccessor.text(app["messages"], "YOU WON! Congratulations!! 😃")
 end
 
 @printbt function handle_output(msg::MsgGameOverLost)
     GAccessor.text(app["status"], "$(state.laststate.guess) - $(state.laststate.lives) lives left")
-    GAccessor.text(app["messages"], "GAME OVER - you lost...")
+    GAccessor.text(app["messages"], "GAME OVER - You lost... 😢")
 end
 
 
